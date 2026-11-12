@@ -1,0 +1,26 @@
+{# Riquadro di un'esecuzione: finché è attiva si ricarica da solo ogni 2 secondi (vista core.views.esecuzione) #}
+{% load testo %}
+<div class="card" id="esecuzione-{{ esecuzione.pk }}"
+     {% if esecuzione.attiva %}hx-get="{% url 'esecuzione' esecuzione.pk %}" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <div class="card-header d-flex flex-wrap align-items-center gap-2">
+    {% include "core/_stato_esecuzione.html" %}
+    <span class="small text-body-secondary">
+      {{ esecuzione.get_tipo_display }}{% if esecuzione.parametri.anno %} {{ esecuzione.parametri.anno }}{% endif %},
+      lanciata da {{ esecuzione.utente.get_username|default:"—" }} il {{ esecuzione.creata_il|date:"d/m/Y H:i" }}{% if esecuzione.durata %},
+      durata {{ esecuzione.durata }}{% endif %}
+    </span>
+  </div>
+  <div class="card-body">
+    {% if esecuzione.worker_fermo %}
+      <div class="alert alert-warning small" role="alert">
+        Il worker non ha ancora preso in carico l'esecuzione: forse non è avviato
+        (<code>manage.py avvia</code> lo avvia insieme al gestionale, <code>manage.py worker</code> in sviluppo).
+      </div>
+    {% endif %}
+    {% if esecuzione.log %}
+      <pre class="log mb-0">{{ esecuzione.log|collega_soci }}</pre>
+    {% else %}
+      <p class="text-body-secondary mb-0">Nessun messaggio.</p>
+    {% endif %}
+  </div>
+</div>

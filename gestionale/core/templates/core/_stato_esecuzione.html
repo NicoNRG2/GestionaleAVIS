@@ -1,0 +1,9 @@
+{% if esecuzione.stato == "completata" %}
+  <span class="badge text-bg-success">{{ esecuzione.get_stato_display }}</span>
+{% elif esecuzione.stato == "fallita" %}
+  <span class="badge text-bg-danger">{{ esecuzione.get_stato_display }}</span>
+{% elif esecuzione.stato == "in_corso" %}
+  <span class="badge text-bg-primary"><span class="spinner-border me-1" aria-hidden="true"></span>{{ esecuzione.get_stato_display }}</span>
+{% else %}
+  <span class="badge text-bg-secondary">{{ esecuzione.get_stato_display }}</span>
+{% endif %}

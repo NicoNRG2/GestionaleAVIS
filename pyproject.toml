@@ -1,0 +1,31 @@
+[project]
+name = "gestionaleavis"
+version = "0.1.0"
+description = "Gestionale web della sezione AVIS Comunale Altopiano di Asiago"
+requires-python = ">=3.14"
+dependencies = [
+    "django>=5.2,<6",
+    "openpyxl>=3.1.5",
+    "playwright>=1.64.1",
+    "psycopg[binary]>=3.2",
+    "python-dotenv>=1.2.4",
+    "waitress>=3.0.2",
+    "whitenoise>=6.12.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+]
+migrazione = [
+    "pyodbc>=5.3.0",
+]
+
+[tool.uv]
+# il gruppo "migrazione" (pyodbc) serve solo sul PC di sviluppo per leggere lo storico AssoAVIS
+default-groups = ["dev", "migrazione"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "gestionale.settings"
+python_files = ["tests.py", "test_*.py"]

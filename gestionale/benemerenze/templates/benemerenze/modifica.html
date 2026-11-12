@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block titolo %}{% if premiazione %}Modifica premiazione{% else %}Nuova premiazione{% endif %} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<nav class="small mb-2">
+  {% if premiazione %}<a href="{% url 'premiazione' premiazione.pk %}">&larr; {{ premiazione.descrizione }}</a>
+  {% else %}<a href="{% url 'benemerenze' %}">&larr; Benemerenze</a>{% endif %}
+</nav>
+<h1 class="h3 mb-4">{% if premiazione %}Modifica premiazione{% else %}Nuova premiazione{% endif %}</h1>
+
+<div class="card" style="max-width: 40rem">
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      {% csrf_token %}
+      {% for errore in form.non_field_errors %}<div class="col-12 small text-danger">{{ errore }}</div>{% endfor %}
+      <div class="col-12">{% include "_campo.html" with campo=form.descrizione %}</div>
+      <div class="col-md-6">{% include "_campo.html" with campo=form.data_consegna %}</div>
+      <div class="col-md-6">{% include "_campo.html" with campo=form.data_riferimento %}</div>
+      <div class="col-md-6">{% include "_campo.html" with campo=form.ex_soci_cessati_dal %}</div>
+      <div class="col-12">
+        <button type="submit" class="btn btn-avis">{% if premiazione %}Salva{% else %}Crea la premiazione{% endif %}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

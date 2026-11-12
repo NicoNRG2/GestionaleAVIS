@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block titolo %}Libro soci {{ anno }} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<div class="d-flex flex-wrap align-items-center gap-3 mb-1">
+  <h1 class="h3 mb-0">Libro soci {{ anno }}</h1>
+  <form method="get" class="d-flex align-items-center gap-2">
+    <label for="anno" class="visually-hidden">Anno del registro</label>
+    <select name="anno" id="anno" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+      {% for a in anni %}<option value="{{ a }}" {% if a == anno %}selected{% endif %}>{{ a }}</option>{% endfor %}
+    </select>
+    <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Mostra</button></noscript>
+  </form>
+</div>
+<p class="text-body-secondary mb-3">
+  Soci del registro: i donatori con almeno una donazione dal 01/01/{{ anno|add:"-2" }} al 31/12/{{ anno }}, tutti i
+  collaboratori e i soci cessati nell'anno, con data e causa.
+</p>
+
+<div id="stato-sian" class="mb-4" hx-get="{% url 'libro_soci_stato' %}?anno={{ anno }}" hx-trigger="load"
+     hx-swap="innerHTML">
+  <div class="small text-body-secondary">
+    <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>Collegamento al SIAN&hellip;
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header">Riepilogo</div>
+      <ul class="list-group list-group-flush" id="riepilogo">
+        <li class="list-group-item d-flex justify-content-between"><span>Soci donatori</span><span>{{ riepilogo.donatori }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Soci collaboratori</span><span>{{ riepilogo.collaboratori }}</span></li>
+        <li class="list-group-item d-flex justify-content-between fw-semibold"><span>Soci</span><span>{{ riepilogo.soci }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>di cui nuovi iscritti nel {{ anno }}</span><span>{{ riepilogo.nuovi }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Cessati nel {{ anno }}</span><span>{{ riepilogo.cessati }}</span></li>
+        <li class="list-group-item d-flex justify-content-between"><span>Da inviare</span><span>{{ riepilogo.inviabili }}</span></li>
+        <li class="list-group-item d-flex justify-content-between {% if riepilogo.scartati %}text-danger{% endif %}">
+          <span>Non inviabili</span><span>{{ riepilogo.scartati }}</span>
+        </li>
+      </ul>
+      <div class="card-footer small text-body-secondary">
+        Come nella barra del registro sul SIAN, i cessati non sono contati tra i soci.
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Azioni</div>
+      <div class="card-body d-grid gap-3">
+        <div>
+          <a class="btn btn-outline-secondary w-100" href="{% url 'libro_soci_esporta' %}?anno={{ anno }}">Esporta per l'Uploader SIAN</a>
+          <div class="form-text">File Excel con i soci da inviare, nel formato del programma SianUploader.</div>
+        </div>
+        {% if perms.core.avvia_invio_sian %}
+          <form method="post" action="{% url 'libro_soci_invia' %}" class="border-top pt-3">
+            {% csrf_token %}
+            <input type="hidden" name="anno" value="{{ anno }}">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="conferma" value="1" id="conferma" required>
+              <label class="form-check-label small" for="conferma">{{ invio_form.conferma.label }}</label>
+            </div>
+            <button type="submit" class="btn btn-avis w-100" {% if attiva or not riepilogo.inviabili %}disabled{% endif %}>
+              Invia il registro completo al SIAN
+            </button>
+            <div class="form-text">
+              {% if attiva %}C'è già un invio in coda o in corso.{% else %}Si inviano {{ riepilogo.inviabili }} soci; i non inviabili non saranno nel registro.{% endif %}
+            </div>
+          </form>
+          <form method="post" action="{% url 'libro_soci_prova' %}" class="border-top pt-3">
+            {% csrf_token %}
+            <input type="hidden" name="anno" value="{{ anno }}">
+            <p class="small fw-semibold mb-2">Prova con un socio</p>
+            <div class="mb-2">{% include "_campo.html" with campo=prova_form.socio %}</div>
+            <button type="submit" class="btn btn-outline-secondary w-100" {% if attiva %}disabled{% endif %}>Invia solo questo socio</button>
+            <div class="form-text">Aggiorna un solo socio sul SIAN e mostra subito l'esito.</div>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <h2 class="h5 mb-3">Non inviabili</h2>
+    {% if scarti %}
+      <p class="small text-body-secondary">Il SIAN li rifiuterebbe: vanno corretti prima dell'invio, sul portale AssoWeb se il dato viene da lì.</p>
+      {% for motivo, record in scarti %}
+        <h3 class="h6 text-danger">{{ motivo }} ({{ record|length }})</h3>
+        <ul class="mb-3" id="scarti">
+          {% for r in record %}
+            <li><a href="{% url 'socio' r.socio.pk %}">{{ r.socio.cognome }} {{ r.socio.nome }}</a>
+              <span class="small text-body-secondary">&middot; {{ r.tipo_socio_nome }}{% if r.cessato %}, cessato{% endif %}</span></li>
+          {% endfor %}
+        </ul>
+      {% endfor %}
+    {% else %}
+      <p class="text-body-secondary">Tutti i soci superano i controlli.</p>
+    {% endif %}
+
+    <h2 class="h5 mt-4 mb-3">Avvisi</h2>
+    {% if avvisi %}
+      <p class="small text-body-secondary">Non bloccano l'invio: il SIAN acquisisce il socio e segnala il dato mancante.</p>
+      <div class="accordion mb-4" id="avvisi">
+        {% for motivo, record in avvisi %}
+          <div class="accordion-item">
+            <h3 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                      data-bs-target="#avviso-{{ forloop.counter }}" aria-expanded="false"
+                      aria-controls="avviso-{{ forloop.counter }}">
+                {{ motivo }}<span class="badge text-bg-secondary ms-2">{{ record|length }}</span>
+              </button>
+            </h3>
+            <div id="avviso-{{ forloop.counter }}" class="accordion-collapse collapse" data-bs-parent="#avvisi">
+              <div class="accordion-body">
+                <ul class="mb-0">
+                  {% for r in record %}
+                    <li><a href="{% url 'socio' r.socio.pk %}">{{ r.socio.cognome }} {{ r.socio.nome }}</a></li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="text-body-secondary">Nessun avviso.</p>
+    {% endif %}
+
+    <h2 class="h5 mt-4 mb-3">Invii al SIAN</h2>
+    {% if invii %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="invii">
+          <thead>
+            <tr><th>Il</th><th>Da</th><th>Anno</th><th>Cosa</th><th>Esito</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for i in invii %}
+              <tr>
+                <td>{{ i.creato_il|date:"d/m/Y H:i" }}</td>
+                <td>{{ i.esecuzione.utente.get_username|default:"—" }}</td>
+                <td>{{ i.anno }}</td>
+                <td>{{ i.get_modalita_display }}</td>
+                <td class="small">
+                  {% for nome, n in i.esiti %}<span class="text-nowrap me-2">{{ nome }}: {{ n }}</span>{% endfor %}
+                </td>
+                <td class="text-end"><a href="{% url 'invio_sian' i.pk %}">Dettagli</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="text-body-secondary">Nessun invio dal gestionale.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

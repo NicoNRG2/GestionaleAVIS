@@ -1,0 +1,45 @@
+{# Statistiche dell'anno scelto: è anche la risposta alle richieste HTMX del selettore (statistiche.views.statistiche) #}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+  <p class="text-body-secondary mb-0">
+    Anno {{ anno }}: soci donatori {% if anno_in_corso %}a oggi{% else %}al{% endif %} {{ riferimento|date:"d/m/Y" }},
+    donazioni {% if anno_in_corso %}fino a oggi{% else %}dell'anno{% endif %}.
+  </p>
+  <a class="btn btn-outline-secondary btn-sm" href="{% url 'statistiche_esporta' %}?anno={{ anno }}">Esporta in Excel</a>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Soci donatori</div>
+      <div class="numero">{{ riepilogo.soci_donatori }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Donazioni</div>
+      <div class="numero">{{ riepilogo.donazioni }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Nuovi soci</div>
+      <div class="numero">{{ riepilogo.nuovi }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Cessati</div>
+      <div class="numero">{{ riepilogo.cessati }}</div>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">{% include "statistiche/_tabella.html" with tabella=tabelle.eta %}</div>
+  <div class="col-lg-6">{% include "statistiche/_tabella.html" with tabella=tabelle.gruppi %}</div>
+  <div class="col-lg-7">{% include "statistiche/_tabella.html" with tabella=tabelle.mesi %}</div>
+  <div class="col-lg-5">{% include "statistiche/_tabella.html" with tabella=tabelle.tipi %}</div>
+  <div class="col-lg-7">{% include "statistiche/_tabella.html" with tabella=tabelle.movimento %}</div>
+  <div class="col-lg-5">{% include "statistiche/_tabella.html" with tabella=tabelle.stati %}</div>
+  <div class="col-12">{% include "statistiche/_tabella.html" with tabella=tabelle.andamento %}</div>
+</div>

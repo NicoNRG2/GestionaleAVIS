@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block titolo %}Accesso - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<div class="accesso mx-auto mt-5">
+  <h1 class="h4 mb-1">Accesso</h1>
+  <p class="text-body-secondary mb-4">AVIS Comunale Altopiano di Asiago</p>
+
+  {% if form.errors %}
+    <div class="alert alert-danger" role="alert">Nome utente o password non corretti.</div>
+  {% endif %}
+
+  <form method="post" action="{% url 'login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <div class="mb-3">
+      <label class="form-label" for="id_username">Nome utente</label>
+      <input class="form-control" type="text" name="username" id="id_username" autocomplete="username"
+             value="{{ form.username.value|default:'' }}" required autofocus>
+    </div>
+    <div class="mb-4">
+      <label class="form-label" for="id_password">Password</label>
+      <input class="form-control" type="password" name="password" id="id_password"
+             autocomplete="current-password" required>
+    </div>
+    <button type="submit" class="btn btn-avis w-100">Entra</button>
+  </form>
+</div>
+{% endblock %}

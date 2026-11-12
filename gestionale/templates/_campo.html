@@ -1,0 +1,12 @@
+{# Un campo di un form con FormBootstrap (core/forms.py): {% include "_campo.html" with campo=form.nome %} #}
+{% if campo.widget_type == "checkbox" %}
+  <div class="form-check">
+    {{ campo }}
+    <label class="form-check-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+  </div>
+{% else %}
+  <label class="form-label" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+  {{ campo }}
+{% endif %}
+{% if campo.help_text %}<div class="form-text">{{ campo.help_text }}</div>{% endif %}
+{% for errore in campo.errors %}<div class="small text-danger">{{ errore }}</div>{% endfor %}

@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>AssoWeb finto</title>
+<!-- Copia finta di AssoWeb per i test di gestionale/portali/assoweb.py: riproduce solo i passaggi e i selettori
+     usati dal client. Password valida: "giusta". I CSV esportati contengono i filtri ricevuti, non dati.
+     Ricerca e convocazione: i donatori sono finti e gli SMS "inviati" finiscono in window.inviati. Con ?senzaconferma
+     nell'indirizzo il banner "Messaggio inviato" non compare. -->
+<style>
+  mat-select, mat-option, div.link, #mat-expansion-panel-header-0 { display: block; padding: 4px; margin: 2px; border: 1px solid #999; cursor: pointer; }
+  .block-ui-wrapper { position: fixed; inset: 0; background: rgba(0, 0, 0, .2); }
+  /* come i campi "outline" di Angular Material: finché la select è vuota l'etichetta le sta sopra, e il click sul
+     campo apre la select */
+  mat-form-field { display: block; position: relative; width: 200px; margin: 2px; }
+  mat-form-field mat-label { position: absolute; inset: 0; padding: 4px; background: #fff; }
+  mat-form-field mat-select { min-height: 20px; }
+  .sidebar-flyout { position: fixed; left: 0; top: 0; width: 400px; height: 100vh; background: rgba(0, 0, 80, .3); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SEZIONI = ["AVIS Comunale Altopiano di Asiago", "AVIS Comunale di Bassano"];
+const DONATORI = "Donatori Totali - Lista di tutti i donatori di una determinata sezione e/o associazione";
+const DONAZIONI = "Totale donazioni - La lista restituisce, in un determinato periodo, la lista di tutte le donazioni";
+const app = document.getElementById("app");
+const $ = selettore => app.querySelector(selettore);
+const bottone = testo => [...app.querySelectorAll("button")].find(b => b.textContent === testo);
+let sezione = "", caricato = false;
+
+function mostra(html, collega) { app.innerHTML = html; collega(); }
+
+function login() {
+  // pagina del firewall del portale vero quando riconosce un bot
+  if (location.search.includes("bloccato")) {
+    app.innerHTML = "<h1>Web Page Blocked!</h1><p>The page cannot be displayed.</p>";
+    return;
+  }
+  mostra(`<div class="card"><h3>Autenticazione con SPID</h3><button>Login</button></div>
+          <div class="card"><h3>Autenticazione con OpenID Connect</h3><button>Login</button></div>`,
+    () => { app.querySelectorAll(".card button")[1].onclick = provider; });
+}
+
+function provider() {
+  mostra(`<select id="wayf"><option>Scegli</option><option>AULSS 7 PEDEMONTANA</option><option>AULSS 8 BERICA</option></select>
+          <button id="accesso">Accesso</button>`,
+    () => { $("#accesso").onclick = () => { if ($("#wayf").value === "AULSS 8 BERICA") smartIdp(false); }; });
+}
+
+function smartIdp(errore) {
+  mostra(`<form>${errore ? "<p>Credenziali non valide</p>" : ""}<input id="username"><input id="password" type="password">
+          <button type="submit">Login</button></form>`,
+    () => { $("form").onsubmit = evento => { evento.preventDefault(); $("#password").value === "giusta" ? home() : smartIdp(true); }; });
+}
+
+function home() {
+  mostra(`<nav><a href="#">Statistiche e reports</a> <a href="#">Ricerca e convocazione</a></nav>`, () => {
+    const [report, ricerca] = app.querySelectorAll("nav a");
+    report.onclick = evento => { evento.preventDefault(); reports(false); };
+    ricerca.onclick = evento => { evento.preventDefault(); convocazione(); copertura(); };
+  });
+}
+
+// con ?coperta nell'indirizzo un flyout della sidebar che non si chiude copre la colonna sinistra della pagina
+function copertura() {
+  if (!location.search.includes("coperta")) return;
+  const menu = document.createElement("div");
+  menu.className = "sidebar-flyout";
+  document.body.appendChild(menu);
+}
+
+// donatori trovati da ogni filtro salvato, a pagine di 100, e tipi di donazione già scelti nel filtro
+const FILTRI = {AvisAltopianoMessaggio: 230, test: 1, test2: 3, vuoto: 0};
+const TIPI_SALVATI = {AvisAltopianoMessaggio: ["Sangue intero"]};
+window.inviati = [];
+window.annullati = 0;
+
+// mat-select con le opzioni in un overlay; con `multipla` il click spunta o toglie e l'overlay resta aperto
+function apriSelect(nomi, scelti, multipla, scegli) {
+  const overlay = document.createElement("div");
+  overlay.id = "overlay";
+  overlay.innerHTML = nomi.map(nome =>
+    `<mat-option role="option" aria-selected="${scelti.includes(nome)}"><span>${nome}</span></mat-option>`).join("");
+  overlay.querySelectorAll("mat-option").forEach(opzione => {
+    opzione.onclick = () => {
+      scegli(opzione.textContent);
+      if (multipla) opzione.setAttribute("aria-selected", opzione.getAttribute("aria-selected") !== "true");
+      else overlay.remove();
+    };
+  });
+  document.body.appendChild(overlay);
+}
+
+function convocazione() {
+  let filtro = "", tipi = new Set(), ricerca = {}, trovati = 0, numero = 0;
+  const selezionati = new Set();
+
+  function risultati() {
+    const righe = [];
+    for (let i = numero * 100; i < Math.min(trovati, (numero + 1) * 100); i++) righe.push(i);
+    // come Angular: niente spazi tra le celle, la casella dentro mat-checkbox, il bottone della pagina solo icona
+    $("#risultati").innerHTML = `<table mat-table>`
+      + `<tr mat-header-row role="row"><th><mat-checkbox><input type="checkbox"></mat-checkbox></th><th>Cognome</th>`
+      + `<th>Nome</th><th>Data nascita</th></tr>`
+      + righe.map(i => `<tr mat-row role="row"><td><mat-checkbox><input type="checkbox" data-riga="${i}" `
+                       + `${selezionati.has(i) ? "checked" : ""}></mat-checkbox></td><td>Donatore</td><td>${i + 1}</td>`
+                       + `<td>01/01/1980</td></tr>`).join("")
+      + `</table>
+      <button aria-label="Pagina successiva" ${(numero + 1) * 100 >= trovati ? "disabled" : ""}><svg width="16" height="16"></svg></button>
+      <button>Invia SMS</button>`;
+    const [intestazione, ...caselle] = $("#risultati").querySelectorAll("input[type=checkbox]");
+    intestazione.checked = righe.length > 0 && righe.every(i => selezionati.has(i));
+    // come la tabella vera: spunta le righe della pagina senza ridisegnarla
+    intestazione.onchange = () => caselle.forEach(casella => {
+      casella.checked = intestazione.checked;
+      casella.onchange();
+    });
+    caselle.forEach(casella => {
+      casella.onchange = () => {
+        const riga = Number(casella.dataset.riga);
+        casella.checked ? selezionati.add(riga) : selezionati.delete(riga);
+      };
+    });
+    $("[aria-label='Pagina successiva']").onclick = () => { numero++; risultati(); };
+    bottone("Invia SMS").onclick = inviaSms;
+  }
+
+  function inviaSms() {
+    const finestra = document.createElement("mat-dialog-container");
+    finestra.setAttribute("role", "dialog");
+    finestra.innerHTML = `<mat-form-field><mat-label>Testo</mat-label><textarea id="testo"></textarea></mat-form-field>`
+      + `<button>Annulla</button><button>Conferma</button>`;
+    app.appendChild(finestra);
+    const [annulla, conferma] = finestra.querySelectorAll("button");
+    annulla.onclick = () => { window.annullati++; finestra.remove(); };
+    conferma.onclick = () => {
+      window.inviati.push({...ricerca, testo: $("#testo").value, destinatari: selezionati.size});
+      finestra.remove();
+      if (location.search.includes("senzaconferma")) return;
+      // come sul portale vero il banner sparisce subito
+      setTimeout(() => {
+        const banner = document.createElement("div");
+        banner.textContent = "Messaggio inviato";
+        document.body.appendChild(banner);
+        setTimeout(() => banner.remove(), 200);
+      }, 300);
+    };
+  }
+
+  mostra(`<mat-form-field><mat-label>Filtri di ricerca</mat-label><mat-select id="filtri" role="combobox"></mat-select></mat-form-field>
+          <mat-expansion-panel-header role="button">Idoneità e donazioni</mat-expansion-panel-header>
+          <div id="donazioni" hidden>
+            <mat-form-field><mat-label>Tipo donazione</mat-label><mat-select id="tipi" role="combobox"></mat-select></mat-form-field>
+            <mat-form-field><mat-label>Data prevista donazione</mat-label><input id="prevista"></mat-form-field>
+          </div>
+          <button id="cerca"><mat-icon>search</mat-icon>Cerca</button>
+          <div id="risultati"></div>`, () => {
+    // come il portale vero, la pagina si apre con lo spinner mentre carica i filtri salvati
+    const caricamento = document.createElement("div");
+    caricamento.className = "block-ui-wrapper active";
+    document.body.appendChild(caricamento);
+    setTimeout(() => caricamento.remove(), 300);
+    // l'etichetta copre la select: si apre con il click sul campo
+    $("#filtri").parentElement.onclick = () => apriSelect(Object.keys(FILTRI), [filtro], false, nome => {
+      filtro = nome;
+      tipi = new Set(TIPI_SALVATI[nome] ?? []);
+    });
+    $("#tipi").parentElement.onclick = () => apriSelect(["Sangue intero", "Plasma"], [...tipi], true, nome => {
+      tipi.has(nome) ? tipi.delete(nome) : tipi.add(nome);
+    });
+    $("mat-expansion-panel-header").onclick = () => { $("#donazioni").hidden = false; };
+    $("#cerca").onclick = () => {
+      const spinner = document.createElement("div");
+      spinner.className = "block-ui-wrapper active";
+      document.body.appendChild(spinner);
+      setTimeout(() => {
+        spinner.remove();
+        ricerca = {filtro, tipi: [...tipi].join(","), data: $("#prevista").value};
+        trovati = FILTRI[filtro] ?? 0;
+        numero = 0;
+        selezionati.clear();
+        risultati();
+      }, 300);
+    };
+  });
+}
+
+function reports(aperto) {
+  mostra(`<nav><a href="#">Statistiche e reports</a></nav><div id="mat-expansion-panel-header-0">Reports</div><div id="elenco"></div>`, () => {
+    const apri = () => {
+      $("#elenco").innerHTML = `<div class="link">${DONATORI}</div><div class="link">${DONAZIONI}</div>`;
+      const [donatori, donazioni] = app.querySelectorAll("div.link");
+      donatori.onclick = () => report("donatori");
+      donazioni.onclick = () => report("donazioni");
+    };
+    $("#mat-expansion-panel-header-0").onclick = apri;
+    if (aperto) apri();
+  });
+}
+
+function report(tipo) {
+  sezione = "";
+  caricato = false;
+  const periodo = tipo === "donazioni" ? `<input placeholder="DA"><input placeholder="A">` : "";
+  mostra(`${periodo}<mat-select>SEZIONE</mat-select><button>Conferma</button><button>Esporta</button><button>Indietro</button>`, () => {
+    $("mat-select").onclick = opzioni;
+    bottone("Conferma").onclick = conferma;
+    bottone("Esporta").onclick = () => esporta(tipo);
+    bottone("Indietro").onclick = () => reports(true);
+  });
+}
+
+function opzioni() {
+  const overlay = document.createElement("div");
+  overlay.id = "overlay";
+  overlay.innerHTML = SEZIONI.map(nome => `<mat-option>${nome}</mat-option>`).join("");
+  overlay.querySelectorAll("mat-option").forEach(opzione => { opzione.onclick = () => { sezione = opzione.textContent; }; });
+  document.body.appendChild(overlay);
+}
+
+document.addEventListener("keydown", evento => { if (evento.key === "Escape") document.getElementById("overlay")?.remove(); });
+
+function conferma() {
+  const spinner = document.createElement("div");
+  spinner.className = "block-ui-wrapper active";
+  document.body.appendChild(spinner);
+  setTimeout(() => { spinner.remove(); caricato = true; }, 300);
+}
+
+function esporta(tipo) {
+  if (!caricato) return;
+  const righe = tipo === "donatori"
+    ? ["SEZIONE", sezione]
+    : ["DA;A;SEZIONE", `${$("[placeholder=DA]").value};${$("[placeholder=A]").value};${sezione}`];
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([righe.join("\r\n") + "\r\n"], {type: "text/csv"}));
+  link.download = `export_${tipo}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+login();
+</script>
+</body>
+</html>

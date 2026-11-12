@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block titolo %}{{ esecuzione }} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+{% if esecuzione.tipo == "aggiorna_dati" %}
+  <nav class="small mb-2"><a href="{% url 'aggiorna_dati' %}">&larr; Aggiorna dati</a></nav>
+{% elif esecuzione.tipo == "posti_liberi" %}
+  <nav class="small mb-2"><a href="{% url 'posti_liberi' %}">&larr; Posti liberi</a></nav>
+{% elif esecuzione.tipo == "invio_sian" %}
+  <nav class="small mb-2"><a href="{% url 'libro_soci' %}?anno={{ esecuzione.parametri.anno }}">&larr; Libro soci</a></nav>
+{% endif %}
+<h1 class="h3 mb-4">{{ esecuzione }}</h1>
+{% include "core/_esecuzione.html" %}
+{% if esecuzione.invio_sian and not esecuzione.attiva %}
+  <p class="mt-3"><a href="{% url 'invio_sian' esecuzione.invio_sian.pk %}">Esito dell'invio socio per socio</a></p>
+{% endif %}
+{% endblock %}

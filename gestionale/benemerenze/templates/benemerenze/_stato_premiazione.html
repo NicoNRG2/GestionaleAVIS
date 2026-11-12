@@ -1,0 +1,7 @@
+{% if premiazione.stato == "assegnata" %}
+  <span class="badge text-bg-success">{{ premiazione.get_stato_display }}</span>
+{% elif premiazione.stato == "calcolata" %}
+  <span class="badge text-bg-warning">{{ premiazione.get_stato_display }}</span>
+{% else %}
+  <span class="badge text-bg-light border">{{ premiazione.get_stato_display }}</span>
+{% endif %}

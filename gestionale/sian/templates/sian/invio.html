@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block titolo %}Invio SIAN {{ invio.pk }} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<nav class="small mb-2"><a href="{% url 'libro_soci' %}?anno={{ invio.anno }}">&larr; Libro soci</a></nav>
+<h1 class="h3 mb-1">Invio del libro soci {{ invio.anno }}</h1>
+<p class="small text-body-secondary mb-4">
+  {{ invio.get_modalita_display }}, il {{ invio.creato_il|date:"d/m/Y H:i" }}
+  {% if invio.esecuzione %}da {{ invio.esecuzione.utente.get_username|default:"—" }}
+    &middot; <a href="{% url 'esecuzione' invio.esecuzione.pk %}">log dell'esecuzione</a>{% endif %}
+  {% if invio.esito_il %}&middot; esito del SIAN del {{ invio.esito_il|date:"d/m/Y H:i" }}{% endif %}
+</p>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header">Esito</div>
+      <ul class="list-group list-group-flush" id="conteggi">
+        {% for nome, n in conteggi %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ nome }}</span><span>{{ n }}</span></li>
+        {% endfor %}
+      </ul>
+      {% if in_attesa and perms.core.avvia_invio_sian %}
+        <div class="card-body border-top">
+          <form method="post" action="{% url 'invio_sian_esito' invio.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-secondary w-100">Aggiorna l'esito</button>
+            <div class="form-text">Legge dal SIAN l'esito dell'elaborazione del registro.</div>
+          </form>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <div class="table-responsive">
+      <table class="table table-sm align-middle" id="righe">
+        <thead>
+          <tr><th>Socio</th><th>Operazione</th><th>Tipo</th><th>Esito</th><th>Messaggio</th></tr>
+        </thead>
+        <tbody>
+          {% for r in righe %}
+            <tr>
+              <td>{% if r.socio %}<a href="{% url 'socio' r.socio.pk %}">{{ r.socio.cognome }} {{ r.socio.nome }}</a>{% else %}{{ r.codice_fiscale }}{% endif %}</td>
+              <td>{{ r.get_operazione_display }}{% if r.data_cessazione %} {{ r.data_cessazione|date:"d/m/Y" }}{% endif %}</td>
+              <td>{{ r.tipo_socio|default:"" }}</td>
+              <td>
+                {% if r.esito == "ok" %}<span class="badge text-bg-success">{{ r.get_esito_display }}</span>
+                {% elif r.esito == "errore" or r.esito == "scartato" %}<span class="badge text-bg-danger">{{ r.get_esito_display }}</span>
+                {% else %}<span class="badge text-bg-secondary">{{ r.get_esito_display }}</span>{% endif %}
+              </td>
+              <td class="small">{{ r.messaggio }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

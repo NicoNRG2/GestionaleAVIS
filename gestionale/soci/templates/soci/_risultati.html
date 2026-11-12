@@ -1,0 +1,52 @@
+{# Tabella dell'elenco soci: è anche la risposta alle richieste HTMX dei filtri (soci.views.elenco) #}
+<p class="small text-body-secondary mb-2">
+  {{ pagina.paginator.count }} soci{% if pagina.paginator.num_pages > 1 %}, pagina {{ pagina.number }} di {{ pagina.paginator.num_pages }}{% endif %}
+</p>
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead>
+      <tr>
+        <th>Socio</th>
+        <th class="d-none d-md-table-cell">Nascita</th>
+        <th>Stato</th>
+        <th class="d-none d-md-table-cell">Idoneità</th>
+        <th class="d-none d-md-table-cell">Gruppo</th>
+        <th class="text-end">Donazioni</th>
+        <th>Ultima</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for socio in pagina %}
+        <tr>
+          <td><a href="{% url 'socio' socio.pk %}">{{ socio.cognome }} {{ socio.nome }}</a></td>
+          <td class="d-none d-md-table-cell">{{ socio.data_nascita|date:"d/m/Y" }}</td>
+          <td>{% include "soci/_stato_socio.html" %}</td>
+          <td class="d-none d-md-table-cell">{{ socio.get_idoneita_display }}</td>
+          <td class="d-none d-md-table-cell">{{ socio.gruppo_sanguigno }}{{ socio.rh }}</td>
+          <td class="text-end">{{ socio.totale }}</td>
+          <td>{{ socio.ultima|date:"d/m/Y" }}</td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" class="text-body-secondary">Nessun socio trovato.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if pagina.paginator.num_pages > 1 %}
+  <nav aria-label="Pagine dell'elenco">
+    <ul class="pagination pagination-sm">
+      {% if pagina.has_previous %}
+        <li class="page-item"><a class="page-link" href="?{% if parametri %}{{ parametri }}&amp;{% endif %}pagina={{ pagina.previous_page_number }}">&laquo; Precedente</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; Precedente</span></li>
+      {% endif %}
+      <li class="page-item active" aria-current="page"><span class="page-link">{{ pagina.number }}</span></li>
+      {% if pagina.has_next %}
+        <li class="page-item"><a class="page-link" href="?{% if parametri %}{{ parametri }}&amp;{% endif %}pagina={{ pagina.next_page_number }}">Successiva &raquo;</a></li>
+      {% else %}
+        <li class="page-item disabled"><span class="page-link">Successiva &raquo;</span></li>
+      {% endif %}
+    </ul>
+  </nav>
+{% endif %}

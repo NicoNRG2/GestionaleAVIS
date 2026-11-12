@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block titolo %}Statistiche - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<div class="d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1">Statistiche</h1>
+    <p class="text-body-secondary mb-0">Donatori e donazioni della sezione, calcolati sul database.</p>
+  </div>
+  {# cambiare l'anno aggiorna solo le statistiche; senza JavaScript il form funziona comunque con il bottone #}
+  <form method="get" action="{% url 'statistiche' %}" class="d-flex align-items-end gap-2"
+        hx-get="{% url 'statistiche' %}" hx-target="#anno" hx-trigger="change" hx-push-url="true">
+    <div>{% include "_campo.html" with campo=form.anno %}</div>
+    <noscript><button type="submit" class="btn btn-avis">Mostra</button></noscript>
+  </form>
+</div>
+
+<div id="anno">{% include "statistiche/_anno.html" %}</div>
+{% endblock %}

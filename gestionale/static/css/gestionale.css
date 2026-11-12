@@ -1,0 +1,73 @@
+:root {
+  --avis-rosso: #c8102e;
+}
+
+.bg-avis {
+  background-color: var(--avis-rosso);
+}
+
+.btn-avis {
+  --bs-btn-bg: var(--avis-rosso);
+  --bs-btn-border-color: var(--avis-rosso);
+  --bs-btn-hover-bg: #a50d26;
+  --bs-btn-hover-border-color: #a50d26;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-color: #fff;
+}
+
+.accesso {
+  max-width: 380px;
+}
+
+.numero {
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* log delle esecuzioni: scorre dentro il riquadro, non allarga la pagina */
+.log {
+  max-height: 32rem;
+  overflow: auto;
+  padding: 0.75rem;
+  font-size: 0.8125rem;
+  background-color: var(--bs-tertiary-bg);
+  border-radius: var(--bs-border-radius);
+}
+
+/* anteprima dell'SMS dei posti liberi, con gli a capo del testo */
+.sms {
+  max-width: 28rem;
+  padding: 0.75rem 1rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background-color: var(--bs-tertiary-bg);
+  border-radius: var(--bs-border-radius-lg);
+}
+
+/* scheda socio: righe dei dati più compatte */
+.scheda dd {
+  margin-bottom: 0.35rem;
+}
+
+/* elenchi lunghi dentro una card (es. le donazioni della scheda) */
+.tabella-scorrevole {
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.badge .spinner-border {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-width: 0.15em;
+}
+
+/* statistiche: barre orizzontali accanto ai numeri, senza schiacciare le colonne */
+.cella-barra {
+  width: 30%;
+  min-width: 6rem;
+}
+
+.barra {
+  height: 0.6rem;
+}

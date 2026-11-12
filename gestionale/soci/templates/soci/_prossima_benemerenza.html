@@ -1,0 +1,27 @@
+{# Situazione del socio per le benemerenze a oggi (benemerenze/calcolo.py: situazione) #}
+{% with c=situazione.conteggio p=situazione.prossima %}
+  <div class="card-footer small">
+    <div class="text-body-secondary mb-1">
+      A oggi {{ c.valide }} donazioni valide ({{ c.effettive }} effettive){% if socio.data_iscrizione %} e
+      {{ c.anni_iscrizione }} anni di iscrizione{% endif %}.
+    </div>
+    {% if situazione.maturate %}
+      <div><span class="fw-semibold">Maturata:</span> {{ situazione.maturate|join:", " }}, da consegnare.</div>
+    {% endif %}
+    {% if p %}
+      <div>
+        <span class="fw-semibold">Prossima:</span> {{ situazione.prossima_benemerenza }},
+        {% if p.mancano == 1 %}manca 1 donazione valida{% else %}mancano {{ p.mancano }} donazioni valide{% endif %}{% if p.anni_dal %}{% if p.mancano_con_anni %},
+          oppure {{ p.mancano_con_anni }} con {{ p.regola.anni }} anni di iscrizione{% if p.anni_dal > situazione.oggi %}, che compie il {{ p.anni_dal|date:"d/m/Y" }}{% endif %}{% else %};
+          con le donazioni di oggi la matura il {{ p.anni_dal|date:"d/m/Y" }}, a {{ p.regola.anni }} anni di iscrizione{% endif %}{% endif %}.
+      </div>
+    {% elif not situazione.maturate %}
+      <div>Ha tutte le benemerenze da donatore.</div>
+    {% endif %}
+    {% if not situazione.premiabile %}
+      <div class="text-body-secondary mt-1">
+        {% if socio.no_benemerenze %}Non desidera benemerenze.{% elif socio.stato == "collaboratore" %}I collaboratori non ricevono benemerenze.{% else %}Oggi non sarebbe premiato: si premiano i soci donatori e gli ex soci cessati dopo l'ultima premiazione.{% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endwith %}

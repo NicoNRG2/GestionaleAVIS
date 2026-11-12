@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block titolo %}Conferma posti liberi - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<nav class="small mb-2"><a href="{% url 'posti_liberi' %}">&larr; Posti liberi</a></nav>
+<h1 class="h3 mb-4">Controlla l'avviso prima dell'invio</h1>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header">Riepilogo</div>
+      <dl class="card-body row mb-0" id="riepilogo">
+        <dt class="col-sm-4">Giornata</dt>
+        <dd class="col-sm-8">{{ dati.giornata|date:"l j F Y"|lower|capfirst }}</dd>
+        <dt class="col-sm-4">Destinatari</dt>
+        <dd class="col-sm-8">
+          {% if modalita == "prova" %}Prova: solo chi trova il filtro «{{ filtro }}»
+          {% else %}Donatori del filtro «{{ filtro }}» di AssoWeb{% endif %}
+        </dd>
+        <dt class="col-sm-4">Lunghezza</dt>
+        <dd class="col-sm-8 mb-0">{{ dati.sms|length }} caratteri</dd>
+      </dl>
+    </div>
+
+    {% if modalita == "simulazione" %}
+      <div class="alert alert-info" role="alert">
+        Simulazione: il gestionale apre AssoWeb, cerca e seleziona i donatori, scrive il testo e chiude la finestra
+        con <em>Annulla</em>. Non parte nessun SMS: nel log si legge quanti donatori lo riceverebbero.
+      </div>
+    {% elif modalita == "prova" %}
+      <div class="alert alert-info" role="alert">
+        Prova: l'SMS parte davvero, ma solo a chi trova il filtro «{{ filtro }}» su AssoWeb.
+      </div>
+    {% else %}
+      <div class="alert alert-warning" role="alert">
+        L'SMS parte subito a tutti i donatori trovati dal filtro e non si può annullare.
+      </div>
+    {% endif %}
+    {% for e in gia_inviati %}
+      <div class="alert alert-warning" role="alert">
+        Per questa giornata è già partito un avviso il {{ e.creata_il|date:"d/m/Y" }} alle {{ e.creata_il|date:"H:i" }}
+        ({{ e.utente.get_username|default:"—" }}, {{ e.parametri.destinatari }} donatori).
+        <a href="{% url 'esecuzione' e.pk %}">Log</a>
+      </div>
+    {% endfor %}
+
+    <form method="post" action="{% url 'posti_liberi_invia' %}" id="conferma-avviso">
+      {% csrf_token %}
+      <input type="hidden" name="giornata" value="{{ dati.giornata|date:'Y-m-d' }}">
+      <input type="hidden" name="modalita" value="{{ dati.modalita }}">
+      <textarea name="testo" hidden>{{ dati.testo }}</textarea>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="conferma" value="1" id="conferma" required>
+        <label class="form-check-label" for="conferma">
+          {% if modalita == "simulazione" %}Ho controllato giornata e testo: avvia la simulazione.
+          {% else %}Ho controllato giornata, destinatari e testo: l'SMS può partire.{% endif %}
+        </label>
+        {% if errore %}<div class="small text-danger">{{ errore }}</div>{% endif %}
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button type="submit" class="btn btn-avis" {% if attiva %}disabled{% endif %}>
+          {% if modalita == "simulazione" %}Avvia la simulazione{% else %}Invia l'SMS{% endif %}
+        </button>
+        <button type="submit" class="btn btn-outline-secondary" formaction="{% url 'posti_liberi' %}" name="modifica"
+                value="1" formnovalidate>Modifica</button>
+      </div>
+      {% if attiva %}<div class="form-text">C'è già un avviso in coda o in corso: si potrà inviare quando termina.</div>{% endif %}
+    </form>
+  </div>
+
+  <div class="col-lg-6">
+    <h2 class="h6 text-body-secondary">Testo dell'SMS</h2>
+    <div class="sms" id="anteprima">{{ dati.sms }}</div>
+  </div>
+</div>
+{% endblock %}

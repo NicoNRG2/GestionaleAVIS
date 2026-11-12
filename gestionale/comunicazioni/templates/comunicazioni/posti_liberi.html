@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block titolo %}Posti liberi - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<h1 class="h3 mb-1">Posti liberi</h1>
+<p class="text-body-secondary mb-4">
+  Manda un SMS da AssoWeb ai donatori che possono donare nella giornata scelta, con la funzione
+  <em>Ricerca e convocazione</em>. Prima dell'invio si controlla il riepilogo e si conferma.
+</p>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-body">
+        {% if perms.core.avvia_posti_liberi %}
+          <form method="post" action="{% url 'posti_liberi' %}" id="avviso">
+            {% csrf_token %}
+            <div class="mb-3">{% include "_campo.html" with campo=form.giornata %}</div>
+            <div class="mb-3">{% include "_campo.html" with campo=form.testo %}</div>
+            <fieldset class="mb-3">
+              <legend class="form-label fs-6">{{ form.modalita.label }}</legend>
+              {% for scelta in form.modalita %}
+                <div class="form-check">
+                  {{ scelta.tag }}
+                  <label class="form-check-label" for="{{ scelta.id_for_label }}">{{ scelta.choice_label }}</label>
+                </div>
+              {% endfor %}
+              {% for errore in form.modalita.errors %}<div class="small text-danger">{{ errore }}</div>{% endfor %}
+            </fieldset>
+            {% for errore in form.non_field_errors %}<div class="small text-danger mb-2">{{ errore }}</div>{% endfor %}
+            <button type="submit" class="btn btn-avis w-100" {% if attiva %}disabled{% endif %}>Avanti: controlla il riepilogo</button>
+            {% if attiva %}<div class="form-text">C'è già un avviso in coda o in corso.</div>{% endif %}
+          </form>
+        {% else %}
+          <p class="text-body-secondary mb-0">Il tuo ruolo non permette di inviare l'avviso.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <h2 class="h5 mb-3">Ultimo avviso</h2>
+    {% if esecuzioni %}
+      {% include "core/_esecuzione.html" with esecuzione=esecuzioni.0 %}
+    {% else %}
+      <p class="text-body-secondary">Nessun avviso inviato dal gestionale.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if esecuzioni %}
+  <h2 class="h5 mt-5 mb-3">Storico</h2>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle" id="storico">
+      <thead>
+        <tr><th>Lanciato il</th><th>Da</th><th>Giornata</th><th>Modalità</th><th>Filtro</th><th class="text-end">Donatori</th><th>Esito</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in esecuzioni %}
+          <tr>
+            <td>{{ e.creata_il|date:"d/m/Y H:i" }}</td>
+            <td>{{ e.utente.get_username|default:"—" }}</td>
+            <td>{{ e.giornata|date:"D d/m/Y" }}</td>
+            <td>{{ e.modalita }}</td>
+            <td>{{ e.parametri.filtro }}</td>
+            <td class="text-end">{{ e.parametri.destinatari|default_if_none:"" }}</td>
+            <td>{% include "core/_stato_esecuzione.html" with esecuzione=e %}</td>
+            <td class="text-end"><a href="{% url 'esecuzione' e.pk %}">Log</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

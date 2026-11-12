@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block titolo %}Aggiorna dati - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<h1 class="h3 mb-1">Aggiorna dati</h1>
+<p class="text-body-secondary mb-4">
+  Scarica da AssoWeb i donatori e le donazioni dell'anno, li importa nel database e aggiorna lo stato dei soci.
+  Ci vogliono alcuni minuti.
+</p>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-body">
+        {% if perms.core.avvia_aggiorna_dati %}
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">{% include "_campo.html" with campo=form.anno %}</div>
+            <button type="submit" class="btn btn-avis w-100" {% if attiva %}disabled{% endif %}>Aggiorna dati</button>
+            {% if attiva %}<div class="form-text">C'è già un aggiornamento in coda o in corso.</div>{% endif %}
+          </form>
+        {% else %}
+          <p class="text-body-secondary mb-0">Il tuo ruolo non permette di lanciare l'aggiornamento.</p>
+        {% endif %}
+      </div>
+      <div class="card-footer small text-body-secondary">
+        Ultimo aggiornamento da AssoWeb:
+        {% if ultimo_aggiornamento %}{{ ultimo_aggiornamento|date:"d/m/Y H:i" }}{% else %}mai{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-8">
+    <h2 class="h5 mb-3">Ultima esecuzione</h2>
+    {% if esecuzioni %}
+      {% include "core/_esecuzione.html" with esecuzione=esecuzioni.0 %}
+    {% else %}
+      <p class="text-body-secondary">Nessuna esecuzione.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% if esecuzioni|length > 1 %}
+  <h2 class="h5 mt-5 mb-3">Storico</h2>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr><th>Lanciata il</th><th>Da</th><th>Anno</th><th>Esito</th><th>Durata</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for e in esecuzioni %}
+          <tr>
+            <td>{{ e.creata_il|date:"d/m/Y H:i" }}</td>
+            <td>{{ e.utente.get_username|default:"—" }}</td>
+            <td>{{ e.parametri.anno }}</td>
+            <td>{% include "core/_stato_esecuzione.html" with esecuzione=e %}</td>
+            <td>{{ e.durata }}</td>
+            <td class="text-end"><a href="{% url 'esecuzione' e.pk %}">Log</a></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}

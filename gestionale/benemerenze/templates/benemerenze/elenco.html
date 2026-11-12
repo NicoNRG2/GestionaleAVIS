@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block titolo %}Benemerenze - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-1">
+  <h1 class="h3 mb-0">Benemerenze</h1>
+  {% if perms.benemerenze.add_premiazione %}
+    {% if aperta %}
+      <a class="btn btn-avis" href="{% url 'premiazione' aperta.pk %}">Riprendi la premiazione aperta</a>
+    {% else %}
+      <a class="btn btn-avis" href="{% url 'premiazione_nuova' %}">Nuova premiazione</a>
+    {% endif %}
+  {% endif %}
+</div>
+<p class="text-body-secondary mb-4">
+  Una premiazione calcola chi ha maturato una benemerenza da donatore alla data di riferimento. Si prepara una
+  premiazione alla volta: dopo il calcolo la lista si rivede, poi un amministratore la assegna.
+</p>
+
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th>Premiazione</th><th>Consegna</th><th class="d-none d-md-table-cell">Riferimento</th>
+        <th class="text-end">Soci</th><th>Stato</th><th class="d-none d-md-table-cell">Origine</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for premiazione in premiazioni %}
+        <tr>
+          <td><a href="{% url 'premiazione' premiazione.pk %}">{{ premiazione.descrizione }}</a></td>
+          <td>{{ premiazione.data_consegna|date:"d/m/Y" }}</td>
+          <td class="d-none d-md-table-cell">{{ premiazione.data_riferimento|date:"d/m/Y"|default:"—" }}</td>
+          <td class="text-end">{{ premiazione.soci }}</td>
+          <td>{% include "benemerenze/_stato_premiazione.html" %}</td>
+          <td class="d-none d-md-table-cell small text-body-secondary">
+            {% if premiazione.codice_assoavis %}AssoAVIS {{ premiazione.codice_assoavis }}{% else %}gestionale{% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="text-body-secondary">Nessuna premiazione.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

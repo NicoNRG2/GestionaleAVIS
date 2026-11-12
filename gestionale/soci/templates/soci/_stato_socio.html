@@ -1,0 +1,12 @@
+{% if socio.stato == "donatore" %}
+  <span class="badge text-bg-success">{{ socio.get_stato_display }}</span>
+{% elif socio.stato == "collaboratore" %}
+  <span class="badge text-bg-primary">{{ socio.get_stato_display }}</span>
+{% elif socio.stato == "ex_socio" %}
+  <span class="badge text-bg-secondary">{{ socio.get_stato_display }}</span>
+{% else %}
+  <span class="badge text-bg-light border">Non socio</span>
+{% endif %}
+{% if socio.collaboratore and socio.stato != "collaboratore" %}
+  <span class="badge border border-primary text-primary">collaboratore</span>
+{% endif %}

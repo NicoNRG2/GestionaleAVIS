@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block titolo %}Soci - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<h1 class="h3 mb-3">Soci</h1>
+
+{# i filtri aggiornano solo la tabella; senza JavaScript il form funziona comunque con il bottone #}
+<form method="get" action="{% url 'soci' %}" class="row g-2 align-items-end mb-3"
+      hx-get="{% url 'soci' %}" hx-target="#risultati" hx-trigger="input delay:400ms, submit" hx-push-url="true">
+  <div class="col-12 col-lg-4">{% include "_campo.html" with campo=form.q %}</div>
+  <div class="col-6 col-lg-2">{% include "_campo.html" with campo=form.stato %}</div>
+  <div class="col-6 col-lg-2">{% include "_campo.html" with campo=form.idoneita %}</div>
+  <div class="col-6 col-lg-2">{% include "_campo.html" with campo=form.ultima_dal %}</div>
+  <div class="col-6 col-lg-2">{% include "_campo.html" with campo=form.ultima_al %}</div>
+  <noscript><div class="col-12"><button type="submit" class="btn btn-avis">Cerca</button></div></noscript>
+</form>
+
+<div id="risultati">{% include "soci/_risultati.html" %}</div>
+{% endblock %}

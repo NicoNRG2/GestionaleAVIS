@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block titolo %}{{ premiazione.descrizione }} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<nav class="small mb-2"><a href="{% url 'benemerenze' %}">&larr; Benemerenze</a></nav>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+  <h1 class="h3 mb-0">{{ premiazione.descrizione }}</h1>
+  {% include "benemerenze/_stato_premiazione.html" %}
+</div>
+<p class="small text-body-secondary mb-4">
+  Consegna il {{ premiazione.data_consegna|date:"d/m/Y" }}
+  {% if premiazione.data_riferimento %}&middot; donazioni fino al {{ premiazione.data_riferimento|date:"d/m/Y" }}{% endif %}
+  {% if statuto %}&middot; {{ statuto.nome }}{% endif %}
+  {% if not premiazione.codice_assoavis %}
+    &middot; {% if premiazione.ex_soci_cessati_dal %}ex soci cessati dopo il {{ premiazione.ex_soci_cessati_dal|date:"d/m/Y" }}{% else %}nessun ex socio{% endif %}
+  {% else %}
+    &middot; importata da AssoAVIS ({{ premiazione.codice_assoavis }})
+  {% endif %}
+</p>
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header">Azioni</div>
+      <div class="card-body d-grid gap-3">
+        {% if modificabile and perms.benemerenze.change_premiazione %}
+          <form method="post" action="{% url 'premiazione_calcola' premiazione.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-avis w-100">
+              {% if premiazione.stato == "bozza" and not premiati and not esclusi %}Calcola la lista{% else %}Ricalcola la lista{% endif %}
+            </button>
+            <div class="form-text">Le esclusioni e le aggiunte a mano restano.</div>
+          </form>
+          <a class="btn btn-outline-secondary" href="{% url 'premiazione_modifica' premiazione.pk %}">Modifica date e descrizione</a>
+        {% endif %}
+        {% if premiati or esclusi %}
+          <a class="btn btn-outline-secondary" href="{% url 'premiazione_esporta' premiazione.pk %}">Esporta in Excel</a>
+        {% endif %}
+        {% if premiazione.stato == "calcolata" %}
+          {% if perms.benemerenze.assegna_premiazione %}
+            <form method="post" action="{% url 'premiazione_assegna' premiazione.pk %}" class="border-top pt-3">
+              {% csrf_token %}
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="conferma" value="1" id="conferma" required>
+                <label class="form-check-label small" for="conferma">
+                  Ho rivisto la lista. Le benemerenze vengono registrate con la data di consegna e la premiazione non
+                  si potrà più modificare.
+                </label>
+              </div>
+              <button type="submit" class="btn btn-outline-danger w-100">Assegna le benemerenze</button>
+            </form>
+          {% else %}
+            <p class="small text-body-secondary mb-0">Dopo la revisione, un amministratore assegna le benemerenze.</p>
+          {% endif %}
+        {% elif premiazione.stato == "bozza" and premiati %}
+          <p class="small text-body-secondary mb-0">Sono cambiate le date: ricalcola la lista prima di assegnarla.</p>
+        {% endif %}
+        {% if modificabile and perms.benemerenze.delete_premiazione %}
+          <form method="post" action="{% url 'premiazione_elimina' premiazione.pk %}"
+                onsubmit="return confirm('Eliminare la premiazione con la sua lista?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link link-danger p-0 small">Elimina la premiazione</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-header">Riepilogo</div>
+      <ul class="list-group list-group-flush">
+        {% for benemerenza, n in per_benemerenza %}
+          <li class="list-group-item d-flex justify-content-between"><span>{{ benemerenza }}</span><span>{{ n }}</span></li>
+        {% endfor %}
+        <li class="list-group-item d-flex justify-content-between fw-semibold">
+          <span>Soci da premiare</span><span>{{ premiati|length }}</span>
+        </li>
+        {% if esclusi %}
+          <li class="list-group-item d-flex justify-content-between text-body-secondary">
+            <span>Esclusi</span><span>{{ esclusi|length }}</span>
+          </li>
+        {% endif %}
+      </ul>
+      <div class="card-footer small text-body-secondary">
+        Ogni socio è contato con la benemerenza più alta, quella che riceve alla cerimonia.
+      </div>
+    </div>
+
+    {% if aggiunta %}
+      <div class="card mb-4">
+        <div class="card-header">Aggiungi un socio a mano</div>
+        <div class="card-body">
+          <form method="post" action="{% url 'premiazione_aggiungi' premiazione.pk %}" class="row g-3">
+            {% csrf_token %}
+            <div class="col-12">{% include "_campo.html" with campo=aggiunta.socio %}</div>
+            <div class="col-12">{% include "_campo.html" with campo=aggiunta.benemerenza %}</div>
+            <div class="col-12">{% include "_campo.html" with campo=aggiunta.motivo %}</div>
+            <div class="col-12"><button type="submit" class="btn btn-outline-secondary">Aggiungi</button></div>
+          </form>
+        </div>
+        <div class="card-footer small text-body-secondary">I requisiti non vengono controllati.</div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-8">
+    <h2 class="h5 mb-3">Soci da premiare</h2>
+    {% if premiati %}
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="premiati">
+          <thead>
+            <tr>
+              <th>Benemerenza</th><th>Socio</th><th class="text-end">Valide</th>
+              <th class="text-end d-none d-sm-table-cell">Effettive</th>
+              <th class="d-none d-md-table-cell">Iscrizione</th>
+              {% if modificabile and perms.benemerenze.change_premiazione %}<th></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in premiati %}
+              <tr>
+                <td>
+                  {{ g.principale.benemerenza }}
+                  {% if g.insieme_a %}<div class="small text-body-secondary">matura anche {{ g.insieme_a|join:", " }}</div>{% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'socio' g.socio.pk %}">{{ g.socio.cognome }} {{ g.socio.nome }}</a>
+                  {% if g.socio.stato == "ex_socio" %}<span class="badge text-bg-secondary">ex socio</span>{% endif %}
+                  {% if g.principale.aggiunto_a_mano %}
+                    <div class="small text-body-secondary">aggiunto a mano: {{ g.principale.motivo }}</div>
+                  {% endif %}
+                </td>
+                <td class="text-end">{{ g.principale.donazioni_valide }}</td>
+                <td class="text-end d-none d-sm-table-cell">{{ g.principale.donazioni_effettive }}</td>
+                <td class="d-none d-md-table-cell">{{ g.socio.data_iscrizione|date:"d/m/Y"|default:"—" }}</td>
+                {% if modificabile and perms.benemerenze.change_premiazione %}
+                  <td class="text-end">
+                    <details>
+                      <summary class="small text-body-secondary">Escludi</summary>
+                      <form method="post" action="{% url 'premiazione_escludi' premiazione.pk g.socio.pk %}"
+                            class="d-flex gap-1 mt-1">
+                        {% csrf_token %}
+                        <input type="text" name="motivo" maxlength="200" required placeholder="motivo"
+                               class="form-control form-control-sm" aria-label="Motivo dell'esclusione">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Escludi</button>
+                      </form>
+                    </details>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% elif premiazione.stato == "bozza" %}
+      <p class="text-body-secondary">Calcola la lista per vedere chi ha maturato una benemerenza.</p>
+    {% else %}
+      <p class="text-body-secondary">Nessun socio da premiare.</p>
+    {% endif %}
+
+    {% if esclusi %}
+      <h2 class="h5 mt-4 mb-3">Esclusi</h2>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="esclusi">
+          <thead>
+            <tr>
+              <th>Benemerenza</th><th>Socio</th><th>Motivo</th>
+              {% if modificabile and perms.benemerenze.change_premiazione %}<th></th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for g in esclusi %}
+              <tr>
+                <td>{{ g.principale.benemerenza }}</td>
+                <td><a href="{% url 'socio' g.socio.pk %}">{{ g.socio.cognome }} {{ g.socio.nome }}</a></td>
+                <td>{{ g.principale.motivo }}</td>
+                {% if modificabile and perms.benemerenze.change_premiazione %}
+                  <td class="text-end">
+                    <form method="post" action="{% url 'premiazione_escludi' premiazione.pk g.socio.pk %}">
+                      {% csrf_token %}
+                      <button type="submit" name="riammetti" value="1" class="btn btn-sm btn-outline-secondary">Riammetti</button>
+                    </form>
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

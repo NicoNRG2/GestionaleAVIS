@@ -1,0 +1,71 @@
+{% load static %}<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titolo %}Gestionale AVIS{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'vendor/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'css/gestionale.css' %}">
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+  <nav class="navbar navbar-expand-md navbar-dark bg-avis mb-4">
+    <div class="container">
+      <a class="navbar-brand fw-semibold" href="{% url 'home' %}">Gestionale AVIS</a>
+      {% if user.is_authenticated %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu"
+                aria-controls="menu" aria-expanded="false" aria-label="Apri il menu">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="menu">
+          <ul class="navbar-nav me-auto">
+            <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+            {% if perms.soci.view_socio %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'soci' %}">Soci</a></li>
+            {% endif %}
+            {% if perms.soci.view_donazione %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'statistiche' %}">Statistiche</a></li>
+            {% endif %}
+            {% if perms.benemerenze.view_premiazione %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'benemerenze' %}">Benemerenze</a></li>
+            {% endif %}
+            {% if perms.sian.view_inviosian %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'libro_soci' %}">Libro soci</a></li>
+            {% endif %}
+            {% if perms.core.view_esecuzione %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'posti_liberi' %}">Posti liberi</a></li>
+              <li class="nav-item"><a class="nav-link" href="{% url 'aggiorna_dati' %}">Aggiorna dati</a></li>
+            {% endif %}
+            {% if user.is_staff %}
+              <li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Amministrazione</a></li>
+            {% endif %}
+          </ul>
+          <div class="dropdown">
+            <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">{{ user.get_username }}</button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" href="{% url 'password_change' %}">Cambia password</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                <form method="post" action="{% url 'logout' %}">
+                  {% csrf_token %}
+                  <button type="submit" class="dropdown-item">Esci</button>
+                </form>
+              </li>
+            </ul>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </nav>
+
+  <main class="container">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" role="alert">{{ message }}</div>
+    {% endfor %}
+    {% block contenuto %}{% endblock %}
+  </main>
+
+  <script src="{% static 'vendor/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'vendor/htmx.min.js' %}"></script>
+</body>
+</html>

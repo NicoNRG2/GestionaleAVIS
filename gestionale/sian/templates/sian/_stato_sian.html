@@ -1,0 +1,13 @@
+{# Registro aperto sul SIAN, letto con IsAlive (sian.views.stato_sian), caricato con HTMX dalla pagina del libro soci #}
+{% if errore %}
+  <div class="alert alert-warning small mb-0" role="alert">SIAN non disponibile: {{ errore }}</div>
+{% elif anno_registro == anno %}
+  <div class="small text-success" id="registro-aperto" data-anno="{{ anno_registro }}">
+    Collegamento al SIAN riuscito: è aperto il registro {{ anno_registro }}.
+  </div>
+{% else %}
+  <div class="alert alert-warning small mb-0" role="alert" id="registro-aperto" data-anno="{{ anno_registro }}">
+    Sul SIAN è aperto il registro {{ anno_registro }}: il libro soci del {{ anno }} non si può inviare.
+    <a href="{% url 'libro_soci' %}?anno={{ anno_registro }}" class="alert-link">Mostra il {{ anno_registro }}</a>
+  </div>
+{% endif %}

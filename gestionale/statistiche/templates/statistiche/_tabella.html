@@ -1,0 +1,44 @@
+{# Una Tabella di statistiche/calcolo.py: {% include "statistiche/_tabella.html" with tabella=... %} #}
+{# la barra va subito dopo la colonna che rappresenta (tabella.barra) e sul telefono si nasconde #}
+<div class="card h-100">
+  <div class="card-header">{{ tabella.titolo }}</div>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead>
+        <tr>
+          {% for colonna in tabella.colonne %}
+            <th{% if not forloop.first %} class="text-end"{% endif %}>{{ colonna }}</th>
+            {% if forloop.counter0 == tabella.barra %}<th class="d-none d-sm-table-cell"></th>{% endif %}
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for riga, larghezza in tabella.righe_con_barre %}
+          <tr>
+            {% for valore in riga %}
+              <td{% if not forloop.first %} class="text-end"{% endif %}>{{ valore }}</td>
+              {% if forloop.counter0 == tabella.barra %}
+                <td class="d-none d-sm-table-cell cella-barra">
+                  <div class="progress barra" role="presentation">
+                    <div class="progress-bar bg-avis" style="width: {{ larghezza }}%"></div>
+                  </div>
+                </td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+      {% if tabella.totale %}
+        <tfoot>
+          <tr class="fw-semibold">
+            {% for valore in tabella.totale %}
+              <td{% if not forloop.first %} class="text-end"{% endif %}>{{ valore }}</td>
+              {% if forloop.counter0 == tabella.barra %}<td class="d-none d-sm-table-cell"></td>{% endif %}
+            {% endfor %}
+          </tr>
+        </tfoot>
+      {% endif %}
+    </table>
+  </div>
+  {% if tabella.nota %}<div class="card-footer small text-body-secondary">{{ tabella.nota }}</div>{% endif %}
+</div>

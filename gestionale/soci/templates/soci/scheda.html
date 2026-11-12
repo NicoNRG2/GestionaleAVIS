@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{# nel titolo solo l'ID: il titolo finisce nella cronologia e nelle schede del browser #}
+{% block titolo %}Socio {{ socio.pk }} - Gestionale AVIS{% endblock %}
+
+{% block contenuto %}
+<nav class="small mb-2"><a href="{% url 'soci' %}">&larr; Soci</a></nav>
+<div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+  <h1 class="h3 mb-0">{{ socio.cognome }} {{ socio.nome }}</h1>
+  {% include "soci/_stato_socio.html" %}
+</div>
+<p class="small text-body-secondary mb-4">
+  Socio {{ socio.pk }} &middot; {{ socio.sezione }} &middot; ultimo aggiornamento da AssoWeb:
+  {% if socio.aggiornato_assoweb_il %}{{ socio.aggiornato_assoweb_il|date:"d/m/Y H:i" }}{% else %}mai{% endif %}
+</p>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header">Anagrafica</div>
+      <div class="card-body">
+        <dl class="row mb-0 scheda">
+          <dt class="col-sm-5">Codice fiscale</dt><dd class="col-sm-7">{{ socio.codice_fiscale|default:"—" }}</dd>
+          <dt class="col-sm-5">Sesso</dt><dd class="col-sm-7">{{ socio.get_sesso_display|default:"—" }}</dd>
+          <dt class="col-sm-5">Nascita</dt>
+          <dd class="col-sm-7">
+            {{ socio.data_nascita|date:"d/m/Y"|default:"—" }}{% if socio.luogo_nascita %}, {{ socio.luogo_nascita }}{% if socio.provincia_nascita %} ({{ socio.provincia_nascita }}){% endif %}{% endif %}
+          </dd>
+          <dt class="col-sm-5">Tessera</dt><dd class="col-sm-7">{{ socio.tessera|default:"—" }}</dd>
+          <dt class="col-sm-5">Codice AssoAVIS</dt><dd class="col-sm-7">{{ socio.codice_interno_assoavis|default:"—" }}</dd>
+          <dt class="col-sm-5">Codice regionale</dt><dd class="col-sm-7">{{ socio.codice_regionale|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Residenza e contatti</div>
+      <div class="card-body">
+        <dl class="row mb-0 scheda">
+          <dt class="col-sm-5">Indirizzo</dt><dd class="col-sm-7">{{ socio.indirizzo_residenza|default:"—" }}</dd>
+          <dt class="col-sm-5">Comune</dt>
+          <dd class="col-sm-7">
+            {% if socio.comune_residenza %}{{ socio.cap_residenza }} {{ socio.comune_residenza }}{% if socio.provincia_residenza %} ({{ socio.provincia_residenza }}){% endif %}{% else %}—{% endif %}
+          </dd>
+          <dt class="col-sm-5">Cellulare</dt><dd class="col-sm-7">{{ socio.cellulare|default:"—" }}</dd>
+          <dt class="col-sm-5">Telefono</dt><dd class="col-sm-7">{{ socio.telefono|default:"—" }}</dd>
+          <dt class="col-sm-5">Email</dt><dd class="col-sm-7">{{ socio.email|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card mb-4">
+      <div class="card-header">Dati trasfusionali (da AssoWeb)</div>
+      <div class="card-body">
+        <dl class="row mb-0 scheda">
+          <dt class="col-sm-5">Gruppo e Rh</dt>
+          <dd class="col-sm-7">{% if socio.gruppo_sanguigno %}{{ socio.gruppo_sanguigno }} {{ socio.get_rh_display }}{% else %}—{% endif %}</dd>
+          <dt class="col-sm-5">Fenotipo Rh, Kell</dt>
+          <dd class="col-sm-7">{{ socio.fenotipo_rh|default:"—" }}, {{ socio.kell|default:"—" }}</dd>
+          <dt class="col-sm-5">Idoneità</dt>
+          <dd class="col-sm-7">
+            {{ socio.get_idoneita_display|default:"—" }}{% if socio.idoneita_dal %} dal {{ socio.idoneita_dal|date:"d/m/Y" }}{% endif %}{% if socio.idoneita_al %} al {{ socio.idoneita_al|date:"d/m/Y" }}{% endif %}
+          </dd>
+          <dt class="col-sm-5">Stato in AssoWeb</dt><dd class="col-sm-7">{{ socio.stato_assoweb|default:"—" }}</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">Dati associativi</div>
+      <div class="card-body">
+        <dl class="row mb-0 scheda">
+          <dt class="col-sm-5">Stato</dt><dd class="col-sm-7">{{ socio.get_stato_display|default:"Non socio" }}</dd>
+          <dt class="col-sm-5">Collaboratore</dt><dd class="col-sm-7">{{ socio.collaboratore|yesno:"sì,no" }}</dd>
+          <dt class="col-sm-5">Iscrizione</dt><dd class="col-sm-7">{{ socio.data_iscrizione|date:"d/m/Y"|default:"—" }}</dd>
+          {% if socio.data_iscrizione_assoweb and socio.data_iscrizione_assoweb != socio.data_iscrizione %}
+            <dt class="col-sm-5">Iscrizione su AssoWeb</dt>
+            <dd class="col-sm-7">{{ socio.data_iscrizione_assoweb|date:"d/m/Y" }} (non usata)</dd>
+          {% endif %}
+          {% if socio.data_cessazione %}
+            <dt class="col-sm-5">Cessazione</dt>
+            <dd class="col-sm-7">{{ socio.data_cessazione|date:"d/m/Y" }} ({{ socio.get_causa_cessazione_display|default:"causa non indicata" }})</dd>
+          {% endif %}
+          <dt class="col-sm-5">Benemerenze</dt>
+          <dd class="col-sm-7">{% if socio.no_benemerenze %}non le desidera{% else %}sì{% endif %}</dd>
+          {% if socio.note %}
+            <dt class="col-sm-5">Note</dt><dd class="col-sm-7">{{ socio.note|linebreaksbr }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if form %}
+  <div class="card mb-4">
+    <div class="card-header">Gestione (amministratori)</div>
+    <div class="card-body">
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+        {% for errore in form.non_field_errors %}<div class="col-12 small text-danger">{{ errore }}</div>{% endfor %}
+        <div class="col-md-6 col-lg-3">{% include "_campo.html" with campo=form.stato %}</div>
+        <div class="col-md-6 col-lg-3">{% include "_campo.html" with campo=form.data_iscrizione %}</div>
+        <div class="col-md-6 col-lg-3">{% include "_campo.html" with campo=form.data_cessazione %}</div>
+        <div class="col-md-6 col-lg-3">{% include "_campo.html" with campo=form.causa_cessazione %}</div>
+        <div class="col-12">{% include "_campo.html" with campo=form.collaboratore %}</div>
+        <div class="col-12">{% include "_campo.html" with campo=form.no_benemerenze %}</div>
+        <div class="col-12">{% include "_campo.html" with campo=form.note %}</div>
+        <div class="col-12"><button type="submit" class="btn btn-avis">Salva</button></div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-4">
+    <div class="card mb-4">
+      <div class="card-header">Benemerenze</div>
+      <ul class="list-group list-group-flush">
+        {% for assegnata in benemerenze %}
+          <li class="list-group-item d-flex justify-content-between">
+            <span>{{ assegnata.benemerenza }}</span>
+            <span class="text-body-secondary">{{ assegnata.data|date:"d/m/Y"|default:"senza data" }}</span>
+          </li>
+        {% empty %}
+          <li class="list-group-item text-body-secondary">Nessuna benemerenza.</li>
+        {% endfor %}
+      </ul>
+      {% include "soci/_prossima_benemerenza.html" %}
+    </div>
+    {% if premiazioni %}
+      <div class="card">
+        <div class="card-header">Premiazioni</div>
+        <ul class="list-group list-group-flush">
+          {% for premiato in premiazioni %}
+            <li class="list-group-item">
+              <div>
+                {{ premiato.benemerenza }}
+                {% if premiato.premiazione.stato != "assegnata" %}<span class="badge text-bg-warning">da assegnare</span>{% endif %}
+              </div>
+              <div class="small text-body-secondary">
+                <a href="{% url 'premiazione' premiato.premiazione.pk %}">{{ premiato.premiazione.data_consegna|date:"d/m/Y" }}</a>,
+                {{ premiato.donazioni_effettive }} donazioni ({{ premiato.donazioni_valide }} valide)
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">Donazioni</div>
+      <div class="card-body">
+        <p class="mb-2">
+          <span class="numero">{{ totale }}</span>
+          <span class="text-body-secondary">
+            {% if pregresse %}di cui {{ registrate }} registrate e {{ pregresse }} pregresse{% else %}donazioni{% endif %}{% if ultima %}, l'ultima il {{ ultima|date:"d/m/Y" }}{% endif %}
+          </span>
+        </p>
+        {% if per_tipo %}
+          <p class="small text-body-secondary">
+            {% for tipo in per_tipo %}{{ tipo.tipo__descrizione }}: {{ tipo.n }}{% if not forloop.last %} &middot; {% endif %}{% endfor %}
+          </p>
+        {% endif %}
+        {% if donazioni %}
+          <div class="table-responsive tabella-scorrevole">
+            <table class="table table-sm mb-0">
+              <thead><tr><th>Data</th><th>Tipo</th><th class="d-none d-md-table-cell">Centro di prelievo</th><th>Fonte</th></tr></thead>
+              <tbody>
+                {% for donazione in donazioni %}
+                  <tr>
+                    <td>{{ donazione.data|date:"d/m/Y" }}</td>
+                    <td>{{ donazione.tipo.codice }}</td>
+                    <td class="d-none d-md-table-cell">{{ donazione.centro_prelievo }}</td>
+                    <td>{{ donazione.get_fonte_display }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

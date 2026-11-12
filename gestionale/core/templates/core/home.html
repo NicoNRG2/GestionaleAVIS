@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block contenuto %}
+<h1 class="h3 mb-4">AVIS Comunale Altopiano di Asiago</h1>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Soci attivi</div>
+      <div class="numero">{{ soci_attivi }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">di cui donatori</div>
+      <div class="numero">{{ donatori_attivi }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Collaboratori (anche donatori)</div>
+      <div class="numero">{{ collaboratori }}</div>
+    </div></div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">Donazioni {{ anno }}</div>
+      <div class="numero">{{ donazioni_anno }}</div>
+    </div></div>
+  </div>
+</div>
+
+<p class="text-body-secondary">
+  Ultimo aggiornamento da AssoWeb:
+  {% if ultimo_aggiornamento %}{{ ultimo_aggiornamento|date:"d/m/Y H:i" }}{% else %}mai{% endif %}
+</p>
+
+<h2 class="h5 mt-4 mb-3">Moduli</h2>
+<div class="list-group">
+  {% for titolo, descrizione, pagina in moduli %}
+    <a class="list-group-item list-group-item-action" href="{% url pagina %}">
+      <div class="fw-semibold">{{ titolo }}</div>
+      <div class="small text-body-secondary">{{ descrizione }}</div>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}
