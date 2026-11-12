@@ -283,6 +283,7 @@ pyproject.toml       dipendenze (uv.lock le fissa)
 docker-compose.yml   PostgreSQL, solo su 127.0.0.1
 .env.example         modello della configurazione; il .env vero non è nel repository
 ANALISI_ASSOAVIS.md  analisi tecnica di AssoAVIS 5: schema del DB, codifiche, regole delle benemerenze, tracciato SIAN
+LICENSE              licenza MIT
 ```
 
 Non sono nel repository, perché contengono dati personali e sanitari reali o credenziali: il backup di AssoAVIS, i CSV scaricati, i backup del DB e il file `.env`. ANALISI_ASSOAVIS.md contiene solo schema e conteggi; la sua §9 (riuso del DB SQL Server) è superata: il gestionale usa un nuovo DB PostgreSQL.
